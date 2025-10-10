@@ -1,0 +1,148 @@
+################################################################################
+#
+# RevBayes Example: Bayesian inference of rates of evolution under a
+#                   constant-rate multivariate Brownian-motion model
+#
+#
+# authors: Michael R. May
+#
+################################################################################
+
+#######################
+# Reading in the Data #
+#######################
+
+### Read in the tree
+T <- readTrees("data/sampled25_tree/BM10_conditional_constPshift_sampled25perc_nodelabels.trees")[1]
+ntips     <- T.ntips()
+nbranches <- 2 * ntips - 2
+
+## write a table of node labels and node numbers
+for(i in 1:(2*ntips-1)){
+    write(i, T.nodeName(i), filename="output/output_sampled25/node_name_map_job2.txt",append=TRUE)
+    write("\n", filename="output/output_sampled25/node_name_map_job2.txt",append=TRUE)
+}
+
+### Read in the continuous-character data
+data <- readContinuousCharacterData("data/sampled25_tree/BM10_conditional_constPshift_sampled25perc.nex")
+nchar <- data.nchar()
+
+# Create some vector for the moves and monitors of this analysis
+moves    = VectorMoves()
+monitors = VectorMonitors()
+
+##########################
+# Specify the tree model #
+##########################
+
+tree <- T
+
+#########################################
+# Specify the variance-covariance model #
+#########################################
+
+# specify the rate at the root
+sigma2_root ~ dnLoguniform(1e-3, 1)
+moves.append( mvScale(sigma2_root, weight=1.0) )
+
+# specify the prior on the number of rate shifts
+r ~ dnExponential(1.0) # hyperprior on expected number of shifts is an exponential to favor fewer shifts 
+expected_number_of_shifts ~ dnPoisson(r) # use Poisson distribution to get a natural number
+rate_shift_probability := expected_number_of_shifts / nbranches
+moves.append( mvScale(r, weight=1.0) ) # Not sure whether to use a different type of move e.g. mvSlide?
+
+# specify the prior on the magnitude of rate shifts
+sd = 0.578
+rate_shift_distribution = dnLognormal(-sd^2/2, sd)
+
+# specify the branch-specific rates
+for(i in nbranches:1) {
+
+    # draw the rate multiplier from a mixture distribution
+    branch_rate_multiplier[i] ~ dnReversibleJumpMixture(1, rate_shift_distribution, Probability(1 - rate_shift_probability) )
+
+    # compute the rate for the branch
+    if ( tree.isRoot( tree.parent(i) ) ) {
+       branch_rates[i] := sigma2_root * branch_rate_multiplier[i]
+    } else {
+       branch_rates[i] := branch_rates[tree.parent(i)] * branch_rate_multiplier[i]
+    }
+
+    # keep track of whether the branch has a rate shift
+    branch_rate_shift[i] := ifelse( branch_rate_multiplier[i] == 1, 0, 1 )
+
+    # use reversible-jump to move between models with and without
+    # shifts on the branch
+    moves.append( mvRJSwitch(branch_rate_multiplier[i], weight=1) )
+
+    # include proposals on the rate mutliplier (when it is not 1)
+    moves.append( mvScale(branch_rate_multiplier[i], weight=1) )
+
+}
+
+# keep track of the number of rate shifts
+num_rate_changes := sum( branch_rate_shift )
+
+# the (marginal) rates among characters
+alpha <- 1.0
+proportional_rates ~ dnDirichlet( rep(alpha, nchar) )
+relative_rates := proportional_rates * nchar
+moves.append( mvBetaSimplex(proportional_rates, weight=2.0) )
+
+# the correlations among characters
+# eta <- 1.0
+# R ~ dnLKJ( eta, nchar )
+# 
+# moves.append( mvCorrelationMatrixRandomWalk(R, weight=3.0) )
+# moves.append( mvCorrelationMatrixSingleElementBeta(R, weight=5.0) )
+
+# for uncorrelated characters,
+R <- diagonalMatrix(nchar)
+correlations := R.upperTriangle()
+
+# construct the variance-covariance matrix
+V := fnDecompVarCovar( relative_rates^0.5, R )
+
+##########################
+# Specify the BM process #
+##########################
+
+X ~ dnPhyloMultivariateBrownianREML(tree, branchRates=branch_rates^0.5, rateMatrix=V)
+X.clamp(data)
+
+
+
+#############
+# The Model #
+#############
+
+mymodel = model(sigma2_root, r) # explicitly include r node (1.2.1 version issue)
+
+### set up the monitors that will output parameter values to file and screen
+monitors.append( mnModel(filename="output/output_sampled25/rel_mvBM_sampled25_job2.log", printgen=100) )
+monitors.append( mnScreen(printgen=100, sigma2_root, num_rate_changes, expected_number_of_shifts) )
+monitors.append( mnExtNewick(filename="output/output_sampled25/rel_mvBM_sampled25_job2.trees", isNodeParameter=TRUE, printgen=100, separator=TAB, tree=tree, branch_rates) )
+
+
+
+################
+# The Analysis #
+################
+
+### workspace mcmc ###
+# mymcmc = mcmc(mymodel, monitors, moves, nruns=2, combine="mixed")
+# Us MCMCMC to improve estimation - hot chains explore a melted parameter space
+mymcmcmc = mcmcmc(mymodel, monitors, moves, nruns=2, combine="mixed", nchains=4, deltaHeat=0.02) # using default values for everything else for now
+
+### run the MCMC ###
+# mymcmc.burnin(generations=1000, tuningInterval=100)
+# mymcmc.run(generations=50000)
+mymcmcmc.burnin(generations = 5000, tuningInterval=500)
+mymcmcmc.run(generations=120000)
+
+## create the annotated tree
+treetrace = readTreeTrace("output/output_sampled25/rel_mvBM_sampled25_job2.trees")
+map_tree = mapTree(treetrace,"output/output_sampled25/rel_mvBM_sampled25_MAP_job2.tre")
+
+## quit ##
+q()
