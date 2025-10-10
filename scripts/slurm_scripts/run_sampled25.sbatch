@@ -1,8 +1,8 @@
 #!/bin/bash
 #Job parameters
 
-#SBATCH --job-name=simRB
-#SBATCH --mail-user=rr9932@princeton.edu
+#SBATCH --job-name=simRB25
+#SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
 #SBATCH -o slurm_outs_%A/LogFile_%x-%A_%a.out                 
 #SBATCH -e slurm_outs_%A/errors_%x-%A_%a.err  
@@ -17,7 +17,10 @@
 #SBATCH -t 2-00:00:00                   
 #SBATCH --no-requeue                     #What to do in case of failure
 
-export PATH=/scratch/gpfs/SIMOES/spack/spack/opt/spack/linux-skylake_avx512/revbayes-1.2.2-cr4nlouibdfhza73azisczz3zlziavsz/bin/:$PATH
+#export PATH=/scratch/gpfs/SIMOES/spack/spack/opt/spack/linux-skylake_avx512/revbayes-1.2.2-cr4nlouibdfhza73azisczz3zlziavsz/bin/:$PATH
 
-cd /home/rr9932/RevBayes/simulation_analysis
+module purge
+module load /programs/revbayes-mpi-1.2.1/
+
+cd /workdir/ruby_disparity/RevBayes/simulation_analysis
 srun rb-mpi scripts/rel_mvBM_job${SLURM_ARRAY_TASK_ID}.Rev
