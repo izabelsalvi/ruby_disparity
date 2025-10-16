@@ -12,9 +12,9 @@
 #SBATCH --error=err_out/Err_%x-%A_%a.err
 
 # Resources:
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 #SBATCH --ntasks=32
-#SBATCH --ntasks-per-node=16
+#SBATCH --ntasks-per-node=32
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=32G
 #SBATCH --time=9-00:00:00
