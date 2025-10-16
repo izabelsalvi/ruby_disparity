@@ -24,19 +24,13 @@ mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
 
 # ---------------- Environment ----------------
 module purge
-module load /programs/revbayes-mpi-1.2.1/
-
-# Sanity check: is rb-mpi available?
-if ! command -v rb-mpi >/dev/null 2>&1; then
-  echo "ERROR: rb-mpi not found after loading /programs/revbayes-mpi-1.2.1/" >&2
-  exit 1
-fi
-echo "Using rb-mpi at: $(command -v rb-mpi)"
-rb-mpi --version || true
 
 # ---------------- Work dir ----------------
 cd /workdir/ruby_disparity/
 
 # ---------------- Run ----------------
 # Launch 32 MPI ranks; pick the .Rev script by array index (1..2)
-srun -n 32 rb-mpi "scripts/rel_mvBM_sampled50_mpi_job${SLURM_ARRAY_TASK_ID}.Rev"
+mpirun -np 32 /programs/revbayes-1.3.0/rb-mpi "scripts/rel_mvBM_sampled50_mpi_job${SLURM_ARRAY_TASK_ID}.Rev"
+
+
+

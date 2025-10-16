@@ -39,4 +39,4 @@ cd /workdir/ruby_disparity/
 
 # ---------------- Run ----------------
 # Launch 32 MPI ranks; pick the .Rev script by array index (1..2)
-srun -n 32 rb-mpi "scripts/rel_mvBM_fulltree_moreGens_job${SLURM_ARRAY_TASK_ID}.Rev"
+mpirun -np 32 /programs/revbayes-1.3.0/rb-mpi "scripts/rel_mvBM_fulltree_moreGens_job${SLURM_ARRAY_TASK_ID}.Rev"
