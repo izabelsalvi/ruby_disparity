@@ -1,26 +1,43 @@
 #!/bin/bash
-#Job parameters
-
-#SBATCH --job-name=simRB25
+# ---------------- Job parameters ----------------
+#SBATCH --job-name=RBsim100
 #SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
-#SBATCH -o slurm_outs_%A/LogFile_%x-%A_%a.out                 
-#SBATCH -e slurm_outs_%A/errors_%x-%A_%a.err  
-#SBATCH --chdir=./logs
+#SBATCH -C cascade
 #SBATCH --array=1-2
 
-#Needed resources
-#SBATCH -C cascade
-#SBATCH --cpus-per-task=32 # 4 runs x 4 chains = 16 chains -> 2 cpus / chain
-##SBATCH --mem-per-cpu=4000M          
-#SBATCH --mem=18G
-#SBATCH -t 2-00:00:00                   
-#SBATCH --no-requeue                     #What to do in case of failure
+# Logging (relative to the directory from which you submit the job)
+#SBATCH --output=logs/slurm_outs_%A/LogFile_%x-%A_%a.out
+#SBATCH --error=logs/slurm_outs_%A/errors_%x-%A_%a.err
 
-#export PATH=/scratch/gpfs/SIMOES/spack/spack/opt/spack/linux-skylake_avx512/revbayes-1.2.2-cr4nlouibdfhza73azisczz3zlziavsz/bin/:$PATH
+# ---------------- Resources ----------------
+# 32 MPI ranks on one Cascade node; 32 GB total RAM; 6 days walltime
+#SBATCH --ntasks=32
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=32G
+#SBATCH --time=2-00:00:00
+#SBATCH --no-requeue
 
+# ---------------- Prep logs ----------------
+# SLURM won't create directories for you
+mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
+
+# ---------------- Environment ----------------
 module purge
 module load /programs/revbayes-mpi-1.2.1/
 
-cd /workdir/ruby_disparity/RevBayes/simulation_analysis
-srun rb-mpi scripts/rel_mvBM_job${SLURM_ARRAY_TASK_ID}.Rev
+# Sanity check: is rb-mpi available?
+if ! command -v rb-mpi >/dev/null 2>&1; then
+  echo "ERROR: rb-mpi not found after loading /programs/revbayes-mpi-1.2.1/" >&2
+  exit 1
+fi
+echo "Using rb-mpi at: $(command -v rb-mpi)"
+rb-mpi --version || true
+
+# ---------------- Work dir ----------------
+cd /workdir/ruby_disparity/
+
+# ---------------- Run ----------------
+# Launch 32 MPI ranks; pick the .Rev script by array index (1..2)
+srun -n 32 rb-mpi "scripts/rel_mvBM_sampled25_job${SLURM_ARRAY_TASK_ID}.Rev"

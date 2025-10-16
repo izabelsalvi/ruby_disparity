@@ -13,7 +13,7 @@
 #######################
 
 ### Read in the tree
-T <- readTrees("data/sampled50_tree/BM10_conditional_constPshift_sampled50perc_nodelabels.trees")[1]
+T <- readTrees("data/sampled50_tree/BM5_conditional_constPshift_sampled50perc_nodelabels.trees")[1]
 ntips     <- T.ntips()
 nbranches <- 2 * ntips - 2
 
@@ -24,7 +24,7 @@ for(i in 1:(2*ntips-1)){
 }
 
 ### Read in the continuous-character data
-data <- readContinuousCharacterData("data/sampled50_tree/BM10_conditional_constPshift_sampled50perc.nex")
+data <- readContinuousCharacterData("data/sampled50_tree/BM5_conditional_constPshift_sampled50perc.nex")
 nchar <- data.nchar()
 
 # Create some vector for the moves and monitors of this analysis

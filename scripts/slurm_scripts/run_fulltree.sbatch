@@ -1,25 +1,43 @@
 #!/bin/bash
-#Job parameters
-
+# ---------------- Job parameters ----------------
 #SBATCH --job-name=RBsim100
-#SBATCH --mail-user=rr9932@princeton.edu
+#SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
-#SBATCH -o slurm_outs_%A/LogFile_%x-%A_%a.out                 
-#SBATCH -e slurm_outs_%A/errors_%x-%A_%a.err  
-#SBATCH --chdir=./logs
+#SBATCH -C cascade
 #SBATCH --array=1-2
 
-#Needed resources
-#SBATCH -C cascade
-#SBATCH --cpus-per-task=1 
+# Logging (relative to the directory from which you submit the job)
+#SBATCH --output=logs/slurm_outs_%A/LogFile_%x-%A_%a.out
+#SBATCH --error=logs/slurm_outs_%A/errors_%x-%A_%a.err
+
+# ---------------- Resources ----------------
+# 32 MPI ranks on one Cascade node; 32 GB total RAM; 6 days walltime
+#SBATCH --ntasks=32
 #SBATCH --ntasks-per-node=32
-#SBATCH --mem-per-cpu=32G
-#SBATCH -t 6-00:00:00                   
-#SBATCH --no-requeue                     #What to do in case of failure
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=32G
+#SBATCH --time=6-00:00:00
+#SBATCH --no-requeue
 
-export PATH=/scratch/gpfs/SIMOES/spack/spack/opt/spack/linux-skylake_avx512/revbayes-1.2.2-cr4nlouibdfhza73azisczz3zlziavsz/bin/:$PATH
+# ---------------- Prep logs ----------------
+# SLURM won't create directories for you
+mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
 
-module load openmpi/gcc/4.1.6
+# ---------------- Environment ----------------
+module purge
+module load /programs/revbayes-mpi-1.2.1/
 
-cd /home/rr9932/RevBayes/simulation_analysis
-mpirun -np 32 rb-mpi scripts/rel_mvBM_fulltree_moreGens_job${SLURM_ARRAY_TASK_ID}.Rev
+# Sanity check: is rb-mpi available?
+if ! command -v rb-mpi >/dev/null 2>&1; then
+  echo "ERROR: rb-mpi not found after loading /programs/revbayes-mpi-1.2.1/" >&2
+  exit 1
+fi
+echo "Using rb-mpi at: $(command -v rb-mpi)"
+rb-mpi --version || true
+
+# ---------------- Work dir ----------------
+cd /workdir/ruby_disparity/
+
+# ---------------- Run ----------------
+# Launch 32 MPI ranks; pick the .Rev script by array index (1..2)
+srun -n 32 rb-mpi "scripts/rel_mvBM_fulltree_moreGens_job${SLURM_ARRAY_TASK_ID}.Rev"
