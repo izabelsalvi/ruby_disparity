@@ -1,13 +1,13 @@
 #!/bin/bash
 # ---------------- Job parameters ----------------
-#SBATCH --job-name=RBsim100
+#SBATCH --job-name=RBsim50
 #SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
 #SBATCH --array=1-2
 
-# Logging (relative to the directory from which you submit the job)
-#SBATCH --output=logs/slurm_outs_%A/LogFile_%x-%A_%a.out
-#SBATCH --error=logs/slurm_outs_%A/errors_%x-%A_%a.err
+# Logging 
+#SBATCH --output=/workdir/ruby_disparity/logs/slurm_outs_%A/LogFile_%x-%A_%a.out
+#SBATCH --error=/workdir/ruby_disparity/logs/slurm_outs_%A/errors_%x-%A_%a.err
 
 # ---------------- Resources ----------------
 # 32 MPI ranks on one Cascade node; 2 days walltime
@@ -20,7 +20,7 @@
 
 # ---------------- Prep logs ----------------
 # SLURM won't create directories for you
-mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
+mkdir -p "/workdir/ruby_disparity/logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
 
 # ---------------- Environment ----------------
 module purge
@@ -30,7 +30,7 @@ cd /workdir/ruby_disparity/
 
 # ---------------- Run ----------------
 # Launch 32 MPI ranks; pick the .Rev script by array index (1..2)
-mpirun -np 32 /programs/revbayes-1.3.0/rb-mpi "scripts/rel_mvBM_sampled50_mpi_job${SLURM_ARRAY_TASK_ID}.Rev"
+mpirun -np 4 /programs/revbayes-1.3.0/rb-mpi "scripts/rel_mvBM_sampled50_mpi_job${SLURM_ARRAY_TASK_ID}.Rev"
 
 
 
