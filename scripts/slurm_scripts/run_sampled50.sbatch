@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=RBsim_sampled50
+#SBATCH --job-name=RBsim50
 #SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
 #SBATCH --array=1-2
@@ -13,10 +13,10 @@
 
 # Resources: 1 node, 4 MPI ranks, 8G total RAM, 2 days
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks=8
+#SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
+#SBATCH --mem=70G
 #SBATCH --time=2-00:00:00
 #SBATCH --no-requeue
 # If your site requires a partition/account, uncomment:
@@ -37,5 +37,5 @@ test -x /programs/revbayes-1.3.0/rb-mpi
 mpirun --version || true
 
 # Launch 4 MPI ranks; pick script by array index (1..2)
-mpirun -np 4 /programs/revbayes-1.3.0/rb-mpi \
+mpirun -np 8 /programs/revbayes-1.3.0/rb-mpi \
   "scripts/rel_mvBM_sampled50_mpi_job${SLURM_ARRAY_TASK_ID}.Rev"

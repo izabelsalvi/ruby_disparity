@@ -11,13 +11,13 @@
 #SBATCH --output=err_out/Log_%x-%A_%a.out
 #SBATCH --error=err_out/Err_%x-%A_%a.err
 
-# Resources: 32 MPI ranks on one Cascade node; 32 GB total RAM; 2 days walltime
-#SBATCH --nodes=1
+# Resources:
+#SBATCH --nodes=4
 #SBATCH --ntasks=32
-#SBATCH --ntasks-per-node=32
+#SBATCH --ntasks-per-node=16
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=32G
-#SBATCH --time=6-00:00:00
+#SBATCH --mem-per-cpu=32G
+#SBATCH --time=9-00:00:00
 #SBATCH --no-requeue
 
 set -euxo pipefail
