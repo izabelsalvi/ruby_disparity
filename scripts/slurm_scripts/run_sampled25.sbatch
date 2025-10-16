@@ -19,7 +19,6 @@
 #SBATCH --no-requeue
 
 # ---------------- Prep logs ----------------
-# SLURM won't create directories for you
 mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
 
 # ---------------- Environment ----------------
