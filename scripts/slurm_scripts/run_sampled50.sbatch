@@ -5,8 +5,8 @@
 #SBATCH --array=1-2
 
 # Logs
-#SBATCH --output=logs/slurm_outs_%A/Log_%x-%A_%a.out
-#SBATCH --error=logs/slurm_outs_%A/Err_%x-%A_%a.err
+#SBATCH --output=/workdir/ruby_disparity/err_out/slurm_outs_%A/Log_%x-%A_%a.out
+#SBATCH --error=/workdir/ruby_disparity/err_out/slurm_outs_%A/Err_%x-%A_%a.err
 
 # Resources: 1 node, 4 MPI ranks, 8G total RAM, 2 days
 #SBATCH --nodes=1
@@ -16,10 +16,6 @@
 #SBATCH --mem=8G
 #SBATCH --time=2-00:00:00
 #SBATCH --no-requeue
-
-set -euo pipefail
-mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
-ulimit -s unlimited
 
 # Working directory
 cd /workdir/ruby_disparity/
