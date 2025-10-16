@@ -1,16 +1,19 @@
 #!/bin/bash
-# ---------------- Job parameters ----------------
-#SBATCH --job-name=RBsim100
+#SBATCH --job-name=RBsim25
 #SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
 #SBATCH --array=1-2
 
-# Logging (relative to the directory from which you submit the job)
-#SBATCH --output=logs/slurm_outs_%A/LogFile_%x-%A_%a.out
-#SBATCH --error=logs/slurm_outs_%A/errors_%x-%A_%a.err
+# Run from your workdir so relative paths are consistent
+#SBATCH --chdir=/workdir/ruby_disparity/
 
-# ---------------- Resources ----------------
-# 32 MPI ranks on one Cascade node; 32 GB total RAM; 6 days walltime
+# Logs (dir *must* exist before sbatch)
+#SBATCH --output=err_out/Log_%x-%A_%a.out
+#SBATCH --error=err_out/Err_%x-%A_%a.err
+
+
+# Resources: 32 MPI ranks on one Cascade node; 32 GB total RAM; 2 days walltime
+#SBATCH --nodes=1
 #SBATCH --ntasks=32
 #SBATCH --ntasks-per-node=32
 #SBATCH --cpus-per-task=1
@@ -18,24 +21,21 @@
 #SBATCH --time=2-00:00:00
 #SBATCH --no-requeue
 
-# ---------------- Prep logs ----------------
-mkdir -p "logs/slurm_outs_${SLURM_ARRAY_JOB_ID}"
+set -euxo pipefail
 
-# ---------------- Environment ----------------
-module purge
-module load /programs/revbayes-mpi-1.2.1/
+# Light diagnostics to the SLURM log
+date
+hostname
+echo "SLURM_NTASKS=${SLURM_NTASKS}  SLURM_ARRAY_TASK_ID=${SLURM_ARRAY_TASK_ID}"
 
-# Sanity check: is rb-mpi available?
-if ! command -v rb-mpi >/dev/null 2>&1; then
-  echo "ERROR: rb-mpi not found after loading /programs/revbayes-mpi-1.2.1/" >&2
-  exit 1
-fi
-echo "Using rb-mpi at: $(command -v rb-mpi)"
-rb-mpi --version || true
+# Confirm tools are present (fail early if not)
+command -v mpirun
+test -x /programs/revbayes-1.3.0/rb-mpi
+/programs/revbayes-1.3.0/rb-mpi --version || true
+mpirun --version || true
 
-# ---------------- Work dir ----------------
-cd /workdir/ruby_disparity/
 
 # ---------------- Run ----------------
 # Launch 32 MPI ranks; pick the .Rev script by array index (1..2)
-mpirun -np 32 /programs/revbayes-1.3.0/rb-mpi "scripts/rel_mvBM_sampled25_job${SLURM_ARRAY_TASK_ID}.Rev"
+mpirun -np 32 /programs/revbayes-1.3.0/rb-mpi \
+  "scripts/rel_mvBM_sampled25_job${SLURM_ARRAY_TASK_ID}.Rev"
