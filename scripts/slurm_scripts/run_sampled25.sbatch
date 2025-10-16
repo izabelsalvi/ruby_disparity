@@ -3,7 +3,6 @@
 #SBATCH --job-name=RBsim100
 #SBATCH --mail-user=is7448@princeton.edu
 #SBATCH --mail-type=ALL
-#SBATCH -C cascade
 #SBATCH --array=1-2
 
 # Logging (relative to the directory from which you submit the job)
